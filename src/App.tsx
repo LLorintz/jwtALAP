@@ -1,68 +1,32 @@
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 
-import { useState } from 'react'
 import './App.css'
-
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
+import TransactionListPage from './pages/TransactionListPage'
+import { useAuth } from './context/AuthContext'
+import requireAuth from './requireAuth/requireAuth'
 function App() {
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('')
-
-  const handleUsernameChange = (e:React.ChangeEvent<HTMLInputElement>)=>{
-    setUsername(e.target.value)
-  }
-
-  const handlePasswordChange = (e:React.ChangeEvent<HTMLInputElement>)=>{
-    setPassword(e.target.value)
-  }
-
-  const handleLogin = async()=>{
-    try {
-      const response = await fetch('http://localhost:3000/login',{
-        method:'POST',
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({username,password})
-      })
-      if (!response.ok) {
-        throw new Error
-      }
-      const data = await response.json()
-      if (data.success) {
-        console.log(data)
-        localStorage.setItem('JWT',data.token)
-      }      
-    } catch (error) {
-      console.log('error:', error)
-    }
- 
-  }
-
-  const handleGetInfo=async()=>{
-    try {
-      const token =  localStorage.getItem('JWT')
-      const response = await fetch(`http://localhost:3000/accounts/${username}`,{
-      headers:{"Authorization":`Bearer ${token}`}
-      })
-      if (!response.ok) {
-        throw new Error
-      }
-     
-      const data = await response.json()
-
-      console.log(data)
-    } catch (error) {
-      console.log('error', error)
-    }
-    
-  }
-
+  const { isAuthenticated } = useAuth()
 
   return (
-    <div>
-      <input value={username} onChange={handleUsernameChange} type="text" placeholder='username...' />
-      <input value={password} onChange={handlePasswordChange} type="password" placeholder='password...'/>
-      <button onClick={handleLogin}>Login</button>
-      <button onClick={handleGetInfo}>GetInfo</button>
-    </div>
+    <>
+      <BrowserRouter>
+
+        {!isAuthenticated && <Link to={'/'}>Login</Link>}
+        {isAuthenticated &&
+          <>
+            <Link to={'/home'}>Home</Link>|
+            <Link to={'/transactions'}>Transactions</Link>
+          </>}
+        <Routes>
+          <Route path='/' Component={LoginPage}></Route>
+          <Route path='/home' Component={requireAuth(HomePage)}></Route>
+          <Route path='/transactions' Component={requireAuth(TransactionListPage)}></Route>
+        </Routes>
+      </BrowserRouter>
+    </>
   )
 }
 
